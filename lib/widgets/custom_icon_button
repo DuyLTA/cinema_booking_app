@@ -1,0 +1,169 @@
+import 'package:flutter/material.dart';
+
+import '../core/app_export.dart';
+import './custom_image_view.dart';
+
+/// Enum to define visual style variants for [CustomIconButton]
+enum CustomIconButtonVariant { plain, styled }
+
+/// A reusable, responsive icon button widget supporting plain and styled variants.
+///
+/// **Arguments:**
+/// - [width] (double?): Width of the button container.
+/// - [height] (double?): Height of the button container.
+/// - [imagePath] (String?): Asset path for the SVG/PNG icon.
+/// - [variant] (CustomIconButtonVariant): Visual variant — plain or styled.
+/// - [margin] (EdgeInsetsGeometry?): Outer margin around the button.
+/// - [padding] (EdgeInsetsGeometry?): Inner padding of the button.
+/// - [onTap] (VoidCallback?): Callback triggered on button tap.
+/// - [backgroundColor] (Color?): Background fill color of the button.
+/// - [borderColor] (Color?): Border stroke color.
+/// - [borderRadius] (double?): Corner radius of the button.
+/// - [shadowColor] (Color?): Color used for the drop shadow.
+/// - [child] (Widget?): Optional child widget override.
+class CustomIconButton extends StatelessWidget {
+  const CustomIconButton({
+    Key? key,
+    this.width,
+    this.height,
+    this.imagePath,
+    this.variant = CustomIconButtonVariant.plain,
+    this.margin,
+    this.padding,
+    this.onTap,
+    this.backgroundColor,
+    this.borderColor,
+    this.borderRadius,
+    this.shadowColor,
+    this.child,
+  }) : super(key: key);
+
+  final double? width;
+  final double? height;
+  final String? imagePath;
+  final CustomIconButtonVariant variant;
+  final EdgeInsetsGeometry? margin;
+  final EdgeInsetsGeometry? padding;
+  final VoidCallback? onTap;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final double? borderRadius;
+  final Color? shadowColor;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: margin ?? EdgeInsets.zero,
+      child: _buildButton(context),
+    );
+  }
+
+  Widget _buildButton(BuildContext context) {
+    final double resolvedWidth = width ?? 22.h;
+    final double resolvedHeight = height ?? 24.h;
+    final EdgeInsetsGeometry resolvedPadding = padding ?? _defaultPadding();
+    final double resolvedRadius = borderRadius ?? _defaultBorderRadius();
+    final Color resolvedBg = backgroundColor ?? _defaultBackgroundColor();
+    final Color resolvedBorder = borderColor ?? _defaultBorderColor();
+    final Color resolvedShadow = shadowColor ?? _defaultShadowColor();
+
+    if (variant == CustomIconButtonVariant.plain) {
+      return GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          width: resolvedWidth,
+          height: resolvedHeight,
+          child: child ?? _buildIcon(),
+        ),
+      );
+    }
+
+    // styled variant
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: resolvedWidth,
+        height: resolvedHeight,
+        padding: resolvedPadding,
+        decoration: BoxDecoration(
+          color: resolvedBg,
+          borderRadius: BorderRadius.circular(resolvedRadius),
+          border: Border.all(color: resolvedBorder, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: resolvedShadow,
+              offset: Offset(0, 4.h),
+              blurRadius: 8.h,
+            ),
+          ],
+        ),
+        child: child ?? _buildIcon(),
+      ),
+    );
+  }
+
+  Widget _buildIcon() {
+    if (imagePath == null || imagePath!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return CustomImageView(
+      imagePath: imagePath!,
+      height: (height ?? 24.h) - _verticalPaddingValue(),
+      width: (width ?? 22.h) - _horizontalPaddingValue(),
+      fit: BoxFit.contain,
+    );
+  }
+
+  double _verticalPaddingValue() {
+    if (variant == CustomIconButtonVariant.styled) {
+      return 12.h; // 6px top + 6px bottom
+    }
+    return 0;
+  }
+
+  double _horizontalPaddingValue() {
+    if (variant == CustomIconButtonVariant.styled) {
+      return 12.h; // 6px left + 6px right
+    }
+    return 0;
+  }
+
+  EdgeInsetsGeometry _defaultPadding() {
+    if (variant == CustomIconButtonVariant.styled) {
+      return EdgeInsets.all(6.h);
+    }
+    return EdgeInsets.zero;
+  }
+
+  double _defaultBorderRadius() {
+    if (variant == CustomIconButtonVariant.styled) {
+      return 10.h;
+    }
+    return 0;
+  }
+
+  Color _defaultBackgroundColor() {
+    if (variant == CustomIconButtonVariant.styled) {
+      return appTheme
+          .colorCC5C06; // Modified: Fixed missing space between 'return' and 'appTheme'
+    }
+    return appTheme.transparentCustom;
+  }
+
+  Color _defaultBorderColor() {
+    if (variant == CustomIconButtonVariant.styled) {
+      return appTheme
+          .color66FFDF; // Modified: Fixed missing space between 'return' and 'appTheme'
+    }
+    return appTheme.transparentCustom;
+  }
+
+  Color _defaultShadowColor() {
+    if (variant == CustomIconButtonVariant.styled) {
+      return appTheme
+          .colorFF8888; // Modified: Fixed missing space between 'return' and 'appTheme'
+    }
+    return appTheme.transparentCustom;
+  }
+}
