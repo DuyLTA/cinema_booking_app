@@ -1,3 +1,5 @@
+import '../../../models/movie_model.dart';
+
 // ignore_for_file: must_be_immutable
 class MovieDetailModel {
   MovieDetailModel({
@@ -14,6 +16,8 @@ class MovieDetailModel {
     this.durationMinutes,
     this.ageRating,
     this.releaseDate,
+    this.castMembers = const [],
+    this.crewMembers = const [],
     this.status,
   }) {
     id = id ?? '';
@@ -29,6 +33,8 @@ class MovieDetailModel {
     durationMinutes = durationMinutes ?? 0;
     ageRating = ageRating ?? '';
     releaseDate = releaseDate ?? '';
+    castMembers = castMembers ?? const [];
+    crewMembers = crewMembers ?? const [];
     status = status ?? '';
   }
 
@@ -45,6 +51,8 @@ class MovieDetailModel {
   int? durationMinutes;
   String? ageRating;
   String? releaseDate;
+  List<MovieCredit>? castMembers;
+  List<MovieCredit>? crewMembers;
   String? status;
 
   MovieDetailModel copyWith({
@@ -61,6 +69,8 @@ class MovieDetailModel {
     int? durationMinutes,
     String? ageRating,
     String? releaseDate,
+    List<MovieCredit>? castMembers,
+    List<MovieCredit>? crewMembers,
     String? status,
   }) {
     return MovieDetailModel(
@@ -77,6 +87,8 @@ class MovieDetailModel {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       ageRating: ageRating ?? this.ageRating,
       releaseDate: releaseDate ?? this.releaseDate,
+      castMembers: castMembers ?? this.castMembers,
+      crewMembers: crewMembers ?? this.crewMembers,
       status: status ?? this.status,
     );
   }

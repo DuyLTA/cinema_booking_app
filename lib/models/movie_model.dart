@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class MovieModel {
   final String id;
   final String title;
@@ -12,6 +14,8 @@ class MovieModel {
   final int? durationMinutes;
   final String? ageRating;
   final DateTime? releaseDate;
+  final List<MovieCredit> castMembers;
+  final List<MovieCredit> crewMembers;
   final String status; // now_showing, coming_soon, ended
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -30,6 +34,8 @@ class MovieModel {
     this.durationMinutes,
     this.ageRating,
     this.releaseDate,
+    this.castMembers = const [],
+    this.crewMembers = const [],
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -53,6 +59,14 @@ class MovieModel {
       releaseDate: json['release_date'] != null
           ? DateTime.parse(json['release_date'] as String)
           : null,
+      castMembers: MovieCredit.listFromJson(
+        json['cast_members'],
+        roleKey: 'role',
+      ),
+      crewMembers: MovieCredit.listFromJson(
+        json['crew_members'],
+        roleKey: 'job',
+      ),
       status: json['status'] as String? ?? 'coming_soon',
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -75,6 +89,8 @@ class MovieModel {
       'duration_minutes': durationMinutes,
       'age_rating': ageRating,
       'release_date': releaseDate?.toIso8601String().split('T')[0],
+      'cast_members': castMembers.map((credit) => credit.toJson()).toList(),
+      'crew_members': crewMembers.map((credit) => credit.toJson()).toList(),
       'status': status,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -96,6 +112,8 @@ class MovieModel {
     int? durationMinutes,
     String? ageRating,
     DateTime? releaseDate,
+    List<MovieCredit>? castMembers,
+    List<MovieCredit>? crewMembers,
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -114,6 +132,8 @@ class MovieModel {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       ageRating: ageRating ?? this.ageRating,
       releaseDate: releaseDate ?? this.releaseDate,
+      castMembers: castMembers ?? this.castMembers,
+      crewMembers: crewMembers ?? this.crewMembers,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -123,4 +143,62 @@ class MovieModel {
   @override
   String toString() =>
       'MovieModel(id: $id, title: $title, status: $status, durationMinutes: $durationMinutes)';
+}
+
+class MovieCredit {
+  final String name;
+  final String role;
+  final String? imageUrl;
+
+  const MovieCredit({required this.name, required this.role, this.imageUrl});
+
+  factory MovieCredit.fromJson(
+    Map<String, dynamic> json, {
+    required String roleKey,
+  }) {
+    return MovieCredit(
+      name: json['name'] as String? ?? '',
+      role:
+          json[roleKey] as String? ??
+          json['role'] as String? ??
+          json['job'] as String? ??
+          '',
+      imageUrl: json['image_url'] as String?,
+    );
+  }
+
+  static List<MovieCredit> listFromJson(
+    dynamic value, {
+    required String roleKey,
+  }) {
+    dynamic rawList;
+    try {
+      rawList = switch (value) {
+        final String text when text.trim().isNotEmpty => jsonDecode(text),
+        final List<dynamic> list => list,
+        _ => const <dynamic>[],
+      };
+    } catch (_) {
+      rawList = const <dynamic>[];
+    }
+
+    if (rawList is! List) {
+      return const [];
+    }
+
+    return rawList
+        .whereType<Map>()
+        .map(
+          (item) => MovieCredit.fromJson(
+            Map<String, dynamic>.from(item),
+            roleKey: roleKey,
+          ),
+        )
+        .where((credit) => credit.name.trim().isNotEmpty)
+        .toList();
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'name': name, 'role': role, 'image_url': imageUrl};
+  }
 }

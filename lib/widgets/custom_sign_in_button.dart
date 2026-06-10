@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_export.dart';
+import '../../core/app_export.dart';
 
 /// A customizable sign-in button with dark red background, top border accent,
 /// Bebas Neue uppercase text, and box shadow styling.

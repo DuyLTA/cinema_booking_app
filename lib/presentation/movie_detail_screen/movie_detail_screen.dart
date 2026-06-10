@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_export.dart';
+import '../../models/movie_model.dart';
 import '../../widgets/custom_book_button.dart';
 import '../../widgets/custom_image_view.dart';
 import 'models/movie_detail_model.dart';
@@ -14,11 +15,13 @@ class MovieDetailScreen extends StatefulWidget {
   const MovieDetailScreen({Key? key, required this.movieId}) : super(key: key);
 
   static Widget builder(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final movieId = args?['movieId'] as String? ?? '';
-    
+
     return ChangeNotifierProvider(
-      create: (context) => MovieDetailProvider()..loadMovieDetail(movieId, context),
+      create: (context) =>
+          MovieDetailProvider()..loadMovieDetail(movieId, context),
       child: MovieDetailScreen(movieId: movieId),
     );
   }
@@ -56,7 +59,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     ),
                     SizedBox(height: 12.h),
                     ElevatedButton(
-                      onPressed: () => provider.loadMovieDetail(widget.movieId, context),
+                      onPressed: () =>
+                          provider.loadMovieDetail(widget.movieId, context),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -74,23 +78,32 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     _buildHeroSection(provider.movieDetail),
                     _buildMovieHeaderSection(provider.movieDetail),
                     _buildStorySection(provider.movieDetail),
-                    _buildCastSection(),
+                    _buildCastSection(provider.movieDetail),
                     _buildReleaseInfoSection(provider.movieDetail),
-                    SizedBox(height: 100.h),
+                    SizedBox(
+                      height: _canBookMovie(provider.movieDetail)
+                          ? 100.h
+                          : 24.h,
+                    ),
                   ],
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: _buildBottomBookingButton(),
-              ),
+              if (_canBookMovie(provider.movieDetail))
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildBottomBookingButton(),
+                ),
             ],
           );
         },
       ),
     );
+  }
+
+  bool _canBookMovie(MovieDetailModel movie) {
+    return movie.status?.trim().toLowerCase() == 'now_showing';
   }
 
   Widget _buildHeroSection(MovieDetailModel movie) {
@@ -129,11 +142,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 24.h,
-                ),
+                child: Icon(Icons.arrow_back, color: Colors.white, size: 24.h),
               ),
             ),
           ),
@@ -148,11 +157,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.share,
-                  color: Colors.white,
-                  size: 24.h,
-                ),
+                child: Icon(Icons.share, color: Colors.white, size: 24.h),
               ),
             ),
           ),
@@ -185,10 +190,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     SizedBox(width: 8.h),
                     Text(
                       'WATCH TRAILER',
-                      style: TextStyleHelper.instance.title16RegularDMSans.copyWith(
-                        color: Colors.white,
-                        letterSpacing: 1,
-                      ),
+                      style: TextStyleHelper.instance.title16RegularDMSans
+                          .copyWith(color: Colors.white, letterSpacing: 1),
                     ),
                   ],
                 ),
@@ -231,23 +234,24 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   children: [
                     Text(
                       movie.title ?? '',
-                      style: TextStyleHelper.instance.headline30RegularBebasNeue.copyWith(
-                        fontFamily: 'Bodoni Moda',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 24.fSize,
-                        letterSpacing: 1.2,
-                        height: 1.1,
-                      ),
+                      style: TextStyleHelper.instance.headline30RegularBebasNeue
+                          .copyWith(
+                            fontFamily: 'Bodoni Moda',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 24.fSize,
+                            letterSpacing: 1.2,
+                            height: 1.1,
+                          ),
                     ),
                     SizedBox(height: 12.h),
                     _buildGenreTags(movie),
                     SizedBox(height: 8.h),
-                    if (movie.durationMinutes != null && movie.durationMinutes! > 0)
+                    if (movie.durationMinutes != null &&
+                        movie.durationMinutes! > 0)
                       Text(
                         '${movie.durationMinutes} MIN',
-                        style: TextStyleHelper.instance.body12MediumDMSans.copyWith(
-                          color: appTheme.gray_500,
-                        ),
+                        style: TextStyleHelper.instance.body12MediumDMSans
+                            .copyWith(color: appTheme.gray_500),
                       ),
                   ],
                 ),
@@ -261,7 +265,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Widget _buildGenreTags(MovieDetailModel movie) {
     final genres = movie.genre?.split(',') ?? ['MOVIE'];
-    
+
     return Wrap(
       spacing: 8.h,
       runSpacing: 8.h,
@@ -300,19 +304,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             children: [
               Text(
                 'THE STORY',
-                style: TextStyleHelper.instance.title20SemiBoldBodoniModa.copyWith(
-                  color: appTheme.gray_300,
-                  letterSpacing: 1,
-                ),
+                style: TextStyleHelper.instance.title20SemiBoldBodoniModa
+                    .copyWith(color: appTheme.gray_300, letterSpacing: 1),
               ),
               GestureDetector(
                 onTap: () {},
                 child: Text(
                   'READ MORE',
-                  style: TextStyleHelper.instance.label10RegularBebasNeue.copyWith(
-                    color: appTheme.orange_100,
-                    letterSpacing: 1,
-                  ),
+                  style: TextStyleHelper.instance.label10RegularBebasNeue
+                      .copyWith(color: appTheme.orange_100, letterSpacing: 1),
                 ),
               ),
             ],
@@ -332,7 +332,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
-  Widget _buildCastSection() {
+  Widget _buildCastSection(MovieDetailModel movie) {
+    final credits = _movieCredits(movie);
+    if (credits.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.h, vertical: 16.h),
       child: Column(
@@ -343,19 +348,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             children: [
               Text(
                 'CAST & CREW',
-                style: TextStyleHelper.instance.title20SemiBoldBodoniModa.copyWith(
-                  color: appTheme.gray_300,
-                  letterSpacing: 1,
-                ),
+                style: TextStyleHelper.instance.title20SemiBoldBodoniModa
+                    .copyWith(color: appTheme.gray_300, letterSpacing: 1),
               ),
               GestureDetector(
                 onTap: () {},
                 child: Text(
                   'VIEW ALL',
-                  style: TextStyleHelper.instance.label10RegularBebasNeue.copyWith(
-                    color: appTheme.orange_100,
-                    letterSpacing: 1,
-                  ),
+                  style: TextStyleHelper.instance.label10RegularBebasNeue
+                      .copyWith(color: appTheme.orange_100, letterSpacing: 1),
                 ),
               ),
             ],
@@ -365,11 +366,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               spacing: 16.h,
-              children: [
-                _buildCastMember('Alexander Director', 'Director'),
-                _buildCastMember('Elena Gold', 'The Enigma'),
-                _buildCastMember('Marcus Steel', 'Lead'),
-              ],
+              children: credits
+                  .map(
+                    (credit) => _buildCastMember(
+                      credit.name,
+                      credit.role,
+                      credit.imageUrl,
+                    ),
+                  )
+                  .toList(),
             ),
           ),
         ],
@@ -377,7 +382,24 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
-  Widget _buildCastMember(String name, String role) {
+  List<MovieCredit> _movieCredits(MovieDetailModel movie) {
+    final credits = <MovieCredit>[...?movie.crewMembers, ...?movie.castMembers];
+
+    if (credits.isNotEmpty) {
+      return credits;
+    }
+
+    final director = movie.director?.trim();
+    if (director != null && director.isNotEmpty) {
+      return [MovieCredit(name: director, role: 'Director')];
+    }
+
+    return const [];
+  }
+
+  Widget _buildCastMember(String name, String role, String? imageUrl) {
+    final hasImage = imageUrl != null && imageUrl.trim().isNotEmpty;
+
     return Column(
       children: [
         Container(
@@ -388,10 +410,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             color: appTheme.gray_900_02,
             border: Border.all(color: appTheme.color19A48B, width: 1.h),
           ),
-          child: Icon(
-            Icons.person,
-            color: appTheme.gray_500,
-            size: 40.h,
+          child: ClipOval(
+            child: hasImage
+                ? CustomImageView(
+                    imagePath: imageUrl,
+                    width: 70.h,
+                    height: 70.h,
+                    fit: BoxFit.cover,
+                  )
+                : Icon(Icons.person, color: appTheme.gray_500, size: 40.h),
           ),
         ),
         SizedBox(height: 8.h),
@@ -409,11 +436,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           ),
         ),
         SizedBox(height: 2.h),
-        Text(
-          role,
-          style: TextStyleHelper.instance.label10RegularBebasNeue.copyWith(
-            color: appTheme.gray_500,
-            fontSize: 10.fSize,
+        SizedBox(
+          width: 80.h,
+          child: Text(
+            role,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyleHelper.instance.label10RegularBebasNeue.copyWith(
+              color: appTheme.gray_500,
+              fontSize: 10.fSize,
+            ),
           ),
         ),
       ],
@@ -425,15 +458,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       padding: EdgeInsets.symmetric(horizontal: 20.h, vertical: 16.h),
       child: Column(
         children: [
-          _buildInfoBox(
-            'RELEASE DATE',
-            movie.releaseDate ?? 'TBD',
-          ),
+          _buildInfoBox('RELEASE DATE', movie.releaseDate ?? 'TBD'),
           SizedBox(height: 12.h),
-          _buildInfoBox(
-            'DIRECTOR',
-            movie.director ?? 'Unknown',
-          ),
+          _buildInfoBox('DIRECTOR', movie.director ?? 'Unknown'),
         ],
       ),
     );

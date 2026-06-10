@@ -15,6 +15,12 @@ class ImageConstant {
       '${_basePath}img_overlay_blur_310x116.png';
   static String imgSvg = '${_basePath}img_svg.svg';
 
+  // Onboarding
+  static String imgOnboardingTheater = '${_basePath}onboarding_theater.png';
+  static String imgOnboardingSeats = '${_basePath}onboarding_seats.png';
+  static String imgOnboardingConcessions =
+      '${_basePath}onboarding_concessions.png';
+
   // Home / Movie List
   static String imgSearch = '${_basePath}img_search.svg';
   static String imgNavHome = '${_basePath}img_nav_home.svg';

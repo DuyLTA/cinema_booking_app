@@ -66,6 +66,8 @@ CREATE TABLE movies (
   age_rating TEXT NOT NULL,
   release_date DATE NOT NULL,
   status TEXT NOT NULL DEFAULT 'coming_soon',
+  cast_members JSONB DEFAULT '[]'::jsonb,
+  crew_members JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -73,6 +75,15 @@ CREATE TABLE movies (
 -- Create indexes
 CREATE INDEX idx_movies_status ON movies(status);
 CREATE INDEX idx_movies_release_date ON movies(release_date DESC);
+```
+
+If your `movies` table already exists from an older setup, add the cast and
+crew columns with:
+
+```sql
+ALTER TABLE movies
+ADD COLUMN IF NOT EXISTS cast_members JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS crew_members JSONB DEFAULT '[]'::jsonb;
 ```
 
 ## 4. Set Up Row Level Security (RLS)
@@ -144,7 +155,7 @@ Go to **SQL Editor** and run:
 
 ```sql
 -- Insert sample movies
-INSERT INTO movies (title, description, poster_url, banner_url, trailer_url, genre, director, language, subtitle, duration_minutes, age_rating, release_date, status)
+INSERT INTO movies (title, description, poster_url, banner_url, trailer_url, genre, director, language, subtitle, duration_minutes, age_rating, release_date, status, cast_members, crew_members)
 VALUES
   (
     'The Quantum Paradox',
@@ -159,7 +170,9 @@ VALUES
     148,
     'T16',
     '2026-01-15',
-    'now_showing'
+    'now_showing',
+    '[{"name":"John David Washington","role":"The Protagonist","image_url":"https://image.tmdb.org/t/p/w185/8A4PS5iG7GWEAVFftyqMZKl3qcr.jpg"},{"name":"Elizabeth Debicki","role":"Kat","image_url":"https://image.tmdb.org/t/p/w185/cIiB0yGU6Hro72P0fA4avX3Ap0W.jpg"}]'::jsonb,
+    '[{"name":"Christopher Nolan","job":"Director","image_url":"https://image.tmdb.org/t/p/w185/xuAIuYSmsUzKlUMBFGVZaWsY3DZ.jpg"}]'::jsonb
   ),
   (
     'Hearts in the Rain',
@@ -174,7 +187,9 @@ VALUES
     118,
     'T13',
     '2026-02-14',
-    'now_showing'
+    'now_showing',
+    '[{"name":"Scarlett Johansson","role":"Lead","image_url":"https://image.tmdb.org/t/p/w185/6NsMbJXRlDZuDzatN2akFdGuTvx.jpg"},{"name":"Bill Murray","role":"Lead","image_url":"https://image.tmdb.org/t/p/w185/nlL4P7NA9G40ZQmNK1FKg7nGLyo.jpg"}]'::jsonb,
+    '[{"name":"Sofia Coppola","job":"Director","image_url":"https://image.tmdb.org/t/p/w185/3u7s1wK2Q0Yhm1EgcwnYXV0LkFn.jpg"}]'::jsonb
   ),
   (
     'Dragon Legacy',
@@ -189,7 +204,9 @@ VALUES
     162,
     'T13',
     '2026-03-01',
-    'coming_soon'
+    'coming_soon',
+    '[{"name":"Elijah Wood","role":"Young Warrior","image_url":"https://image.tmdb.org/t/p/w185/7UKRbJBNG7mxBl2QQc5XsAh6F8B.jpg"},{"name":"Cate Blanchett","role":"Queen","image_url":"https://image.tmdb.org/t/p/w185/ar33qcWbEgREn07ZpXv5Pbj8hbM.jpg"}]'::jsonb,
+    '[{"name":"Peter Jackson","job":"Director","image_url":"https://image.tmdb.org/t/p/w185/bE0T3AlG8RQRYqzrD0vI7qNnNkM.jpg"}]'::jsonb
   ),
   (
     'Code Red',
@@ -204,7 +221,9 @@ VALUES
     135,
     'T18',
     '2026-02-20',
-    'now_showing'
+    'now_showing',
+    '[{"name":"Timothee Chalamet","role":"Hacker","image_url":"https://image.tmdb.org/t/p/w185/BE2sdjpgsa2rNTFa66f7upkaOP.jpg"},{"name":"Rebecca Ferguson","role":"Agent","image_url":"https://image.tmdb.org/t/p/w185/lJloTOheuQSirSLXNA3JHsrMNfH.jpg"}]'::jsonb,
+    '[{"name":"Denis Villeneuve","job":"Director","image_url":"https://image.tmdb.org/t/p/w185/zD7b7gzK9z9qg6VnQK0jOJDGkQx.jpg"}]'::jsonb
   ),
   (
     'Starlight Adventure',
@@ -219,7 +238,9 @@ VALUES
     155,
     'T13',
     '2026-04-10',
-    'coming_soon'
+    'coming_soon',
+    '[{"name":"Sam Worthington","role":"Commander","image_url":"https://image.tmdb.org/t/p/w185/6H5qTWdxF9CTx6WQi7X7j0iggvo.jpg"},{"name":"Zoe Saldana","role":"Explorer","image_url":"https://image.tmdb.org/t/p/w185/iOVbUH20il632nj2v01NCtYYeSg.jpg"}]'::jsonb,
+    '[{"name":"James Cameron","job":"Director","image_url":"https://image.tmdb.org/t/p/w185/9NAZnTjBQ9WcXAQEzZpKy4vdQto.jpg"}]'::jsonb
   );
 ```
 

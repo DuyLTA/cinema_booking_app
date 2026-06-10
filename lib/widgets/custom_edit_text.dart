@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_export.dart';
-import './custom_image_view.dart';
+import '../../core/app_export.dart';
+import 'custom_image_view.dart';
 
 /// A customizable text input field widget supporting email, password,
 /// and general text input types with optional left and right icons.

@@ -189,6 +189,50 @@ class AuthService {
     }
   }
 
+  /// Update current user's customer profile.
+  Future<CustomerModel> updateCurrentUserProfile({
+    required String fullName,
+    String? phone,
+  }) async {
+    try {
+      final userId = currentUser?.id;
+      if (userId == null) {
+        throw Exception('No authenticated user found.');
+      }
+
+      final response = await _supabase
+          .from('customers')
+          .update({
+            'full_name': fullName,
+            'phone': phone,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', userId)
+          .select()
+          .single()
+          .timeout(const Duration(seconds: 10));
+
+      _cachedCustomer = CustomerModel.fromJson(response);
+      _cachedUserId = userId;
+      return _cachedCustomer!;
+    } catch (e) {
+      throw Exception('Failed to update profile: $e');
+    }
+  }
+
+  /// Change password for the currently signed-in user.
+  Future<void> changePassword({required String newPassword}) async {
+    try {
+      await _supabase.auth
+          .updateUser(UserAttributes(password: newPassword))
+          .timeout(const Duration(seconds: 10));
+    } on AuthException catch (e) {
+      throw Exception('Failed to change password: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to change password: $e');
+    }
+  }
+
   /// Validate the current session (used at app startup).
   /// Returns false and clears auth state when the session is missing or expired.
   Future<bool> validateSession() async {
@@ -223,8 +267,42 @@ class AuthService {
   ///
   /// Throws: Exception if password reset fails
   Future<void> resetPassword({required String email}) async {
+    await sendPasswordResetCode(email: email);
+  }
+
+  /// Send a password recovery code to the user's email.
+  Future<void> sendPasswordResetCode({required String email}) async {
     try {
-      await _supabase.auth.resetPasswordForEmail(email);
+      await _supabase.auth
+          .resetPasswordForEmail(email)
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      throw Exception('Failed to send password reset code: $e');
+    }
+  }
+
+  /// Verify the recovery code and update the password.
+  ///
+  /// Supabase creates a short-lived recovery session after OTP verification.
+  /// The password update must be performed while that recovery session is active.
+  Future<void> resetPasswordWithCode({
+    required String email,
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await _supabase.auth
+          .verifyOTP(email: email, token: token, type: OtpType.recovery)
+          .timeout(const Duration(seconds: 10));
+
+      await _supabase.auth
+          .updateUser(UserAttributes(password: newPassword))
+          .timeout(const Duration(seconds: 10));
+
+      await _supabase.auth.signOut();
+      clearCache();
+    } on AuthException catch (e) {
+      throw Exception('Password reset failed: ${e.message}');
     } catch (e) {
       throw Exception('Password reset failed: $e');
     }

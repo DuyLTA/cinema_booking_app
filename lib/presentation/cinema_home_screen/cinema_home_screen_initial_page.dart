@@ -37,11 +37,7 @@ class _CinemaHomeScreenInitialPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appTheme.screenBackground,
-      appBar: CustomCineMarqueeAppBar(
-        leadingImagePath: ImageConstant.imgButton,
-        titleText: 'CINE BOOKING',
-        actionImagePath: ImageConstant.imgButtonDeepOrange100,
-      ),
+      appBar: const CustomCineMarqueeAppBar(titleText: 'CINE BOOKING'),
       body: Consumer<CinemaHomeProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.nowShowingMovies.isEmpty) {
@@ -279,6 +275,15 @@ class _CinemaHomeScreenInitialPageState
         itemBuilder: (context, index) {
           return ComingSoonItemWidget(
             movie: provider.comingSoonMovies[index],
+            onTap: () {
+              final movie = provider.comingSoonMovies[index];
+              if (movie.id != null && movie.id!.isNotEmpty) {
+                Navigator.of(context).pushNamed(
+                  AppRoutes.movieDetailScreen,
+                  arguments: {'movieId': movie.id},
+                );
+              }
+            },
             onReminderTap: () => provider.toggleReminder(index),
           );
         },

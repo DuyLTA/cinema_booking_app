@@ -127,12 +127,10 @@ class CinemaHomeProvider extends ChangeNotifier {
   }
 
   void copyPromoCode(BuildContext context, String promoCode) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Promo code "$promoCode" copied!'),
-        backgroundColor: appTheme.gray_900_01,
-        duration: const Duration(seconds: 2),
-      ),
+    AppSnackBar.show(
+      context,
+      message: 'Promo code "$promoCode" copied!',
+      type: AppSnackBarType.success,
     );
   }
 }

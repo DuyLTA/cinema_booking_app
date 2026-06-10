@@ -96,6 +96,8 @@ class CinemaRegisterProvider extends ChangeNotifier {
     notifyListeners();
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     final fullName = fullNameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
@@ -131,14 +133,13 @@ class CinemaRegisterProvider extends ChangeNotifier {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Registration successful! Welcome to Cine Booking.'),
-          backgroundColor: appTheme.gray_900,
-        ),
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: 'Registration successful! Welcome to Cine Booking.',
+        type: AppSnackBarType.success,
       );
 
-      Navigator.of(context).pushReplacementNamed(AppRoutes.cinemaHomeScreen);
+      navigator.pushReplacementNamed(AppRoutes.cinemaHomeScreen);
     } catch (e) {
       isLoading = false;
       errorMessage = e.toString();
@@ -147,30 +148,27 @@ class CinemaRegisterProvider extends ChangeNotifier {
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage ?? 'An error occurred.'),
-          backgroundColor: appTheme.gray_900,
-        ),
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: errorMessage ?? 'An error occurred.',
+        type: AppSnackBarType.error,
       );
     }
   }
 
   void onGoogleSignInPressed(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Google Sign-In coming soon.'),
-        backgroundColor: appTheme.gray_900,
-      ),
+    AppSnackBar.show(
+      context,
+      message: 'Google Sign-In coming soon.',
+      type: AppSnackBarType.info,
     );
   }
 
   void onAppleSignInPressed(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Apple Sign-In coming soon.'),
-        backgroundColor: appTheme.gray_900,
-      ),
+    AppSnackBar.show(
+      context,
+      message: 'Apple Sign-In coming soon.',
+      type: AppSnackBarType.info,
     );
   }
 

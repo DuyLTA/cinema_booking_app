@@ -8,6 +8,7 @@ import 'package:cinema_booking_app/providers/auth_provider.dart';
 import 'package:cinema_booking_app/providers/movie_provider.dart';
 import 'package:cinema_booking_app/routes/app_routes.dart';
 import 'package:cinema_booking_app/presentation/launch_screen.dart';
+import 'package:cinema_booking_app/presentation/onboarding_screen/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +51,7 @@ class MyApp extends StatelessWidget {
               ),
               useMaterial3: true,
             ),
-            home: const SplashScreen(),
+            home: const OnboardingScreen(),
             routes: AppRoutes.routes,
           ),
         );

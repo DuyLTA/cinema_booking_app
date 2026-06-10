@@ -27,9 +27,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
     return Scaffold(
       backgroundColor: appTheme.screenBackground,
       appBar: CustomCineMarqueeAppBar(
-        leadingImagePath: ImageConstant.imgButton,
         titleText: 'CINE BOOKING',
-        actionImagePath: ImageConstant.imgButtonDeepOrange100,
         onLeadingTap: () {},
         onActionTap: () {},
       ),
@@ -279,14 +277,12 @@ class _MovieListScreenState extends State<MovieListScreen> {
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12.h,
-          mainAxisSpacing: 20.h,
-          childAspectRatio: 0.42,
+          mainAxisSpacing: 14.h,
+          childAspectRatio: 0.58,
         ),
         itemCount: movies.length,
         itemBuilder: (context, index) {
-          return MovieCardWidget(
-            movie: movies[index],
-          );
+          return MovieCardWidget(movie: movies[index]);
         },
       ),
     );

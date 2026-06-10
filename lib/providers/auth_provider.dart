@@ -186,6 +186,133 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Update the current user's profile row.
+  Future<bool> updateProfile({required String fullName, String? phone}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (fullName.trim().isEmpty) {
+        throw Exception('Please enter your full name.');
+      }
+
+      _currentCustomer = await _authService.updateCurrentUserProfile(
+        fullName: fullName.trim(),
+        phone: (phone ?? '').trim().isEmpty ? null : phone!.trim(),
+      );
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Change password for the currently signed-in user.
+  Future<bool> changePassword({
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (newPassword.isEmpty) {
+        throw Exception('Please enter your new password.');
+      }
+      if (newPassword.length < 6) {
+        throw Exception('Password must be at least 6 characters.');
+      }
+      if (newPassword != confirmPassword) {
+        throw Exception('Passwords do not match.');
+      }
+
+      await _authService.changePassword(newPassword: newPassword);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Send a password recovery code to the user's email.
+  Future<bool> sendPasswordResetCode({required String email}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (email.isEmpty) {
+        throw Exception('Please enter your email.');
+      }
+      if (!_isValidEmail(email)) {
+        throw Exception('Please enter a valid email.');
+      }
+
+      await _authService.sendPasswordResetCode(email: email);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Verify the email recovery code and set a new password.
+  Future<bool> resetPasswordWithCode({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (email.isEmpty) {
+        throw Exception('Please enter your email.');
+      }
+      if (!_isValidEmail(email)) {
+        throw Exception('Please enter a valid email.');
+      }
+      if (code.isEmpty) {
+        throw Exception('Please enter the reset code from your email.');
+      }
+      if (newPassword.isEmpty) {
+        throw Exception('Please enter your new password.');
+      }
+      if (newPassword.length < 6) {
+        throw Exception('Password must be at least 6 characters.');
+      }
+
+      await _authService.resetPasswordWithCode(
+        email: email,
+        token: code,
+        newPassword: newPassword,
+      );
+
+      _isLoggedIn = false;
+      _currentUser = null;
+      _currentCustomer = null;
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Load customer profile for current user with timeout
   /// Completes silently even if there's an error (doesn't break auth state)
   Future<void> _loadCustomerProfile() async {
