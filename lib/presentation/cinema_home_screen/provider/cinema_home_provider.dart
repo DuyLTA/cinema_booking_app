@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/app_export.dart';
 import '../../../providers/movie_provider.dart';
 import '../../../core/utils/movie_ui_mapper.dart';
 import '../../../models/cinema_entity_model.dart';
+import '../../../services/coupon_service.dart';
 import '../../../services/cinema_service.dart';
 import '../models/cinema_home_model.dart';
 import '../models/cinema_model.dart';
@@ -13,6 +15,7 @@ import '../models/offer_model.dart';
 
 class CinemaHomeProvider extends ChangeNotifier {
   final CinemaService _cinemaService = CinemaService();
+  final CouponService _couponService = CouponService();
 
   CinemaHomeModel cinemaHomeModel = CinemaHomeModel();
 
@@ -43,12 +46,16 @@ class CinemaHomeProvider extends ChangeNotifier {
       final cinemas = await _cinemaService.getAllCinemas();
       nearbyCinemas = cinemas.map(_mapCinemaEntity).toList();
 
-      _loadExclusiveOffers();
+      final offers = await _couponService.getOffers();
+      exclusiveOffers = offers
+          .where((offer) => !(offer.isClaimed ?? false))
+          .toList();
     } catch (e) {
       errorMessage = e.toString();
       nowShowingMovies = [];
       comingSoonMovies = [];
       nearbyCinemas = [];
+      exclusiveOffers = [];
     } finally {
       isLoading = false;
       notifyListeners();
@@ -86,31 +93,6 @@ class CinemaHomeProvider extends ChangeNotifier {
     );
   }
 
-  void _loadExclusiveOffers() {
-    exclusiveOffers = [
-      OfferModel(
-        id: '1',
-        title: 'HAPPY MONDAY',
-        description:
-            'Enjoy 50% Off on all tickets\nevery Monday for Premiere\nmembers.',
-        promoCode: 'PROMO: MONDAY50',
-        borderColor: appTheme.color33FFB3,
-        showOverlayImage: true,
-        isClaimed: false,
-      ),
-      OfferModel(
-        id: '2',
-        title: 'COMBO DELUXE',
-        description:
-            'Get a free Large Popcorn with\nany 2 Gold Class tickets\npurchased today.',
-        promoCode: 'PROMO: POPDELUXE',
-        borderColor: appTheme.color33FFDF,
-        showOverlayImage: false,
-        isClaimed: false,
-      ),
-    ];
-  }
-
   void toggleReminder(int index) {
     if (index < comingSoonMovies.length) {
       comingSoonMovies[index].hasReminder =
@@ -119,14 +101,34 @@ class CinemaHomeProvider extends ChangeNotifier {
     }
   }
 
-  void claimOffer(int index) {
+  Future<void> claimOffer(BuildContext context, int index) async {
+    if (index >= exclusiveOffers.length) {
+      return;
+    }
+
+    final offer = exclusiveOffers[index];
+    await _couponService.claimCoupon(offer);
+    if (!context.mounted) {
+      return;
+    }
     if (index < exclusiveOffers.length) {
-      exclusiveOffers[index].isClaimed = true;
+      exclusiveOffers.removeAt(index);
       notifyListeners();
     }
+    copyPromoCode(context, offer.promoCode ?? '');
   }
 
   void copyPromoCode(BuildContext context, String promoCode) {
+    if (promoCode.trim().isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: 'No promo code available for this offer.',
+        type: AppSnackBarType.error,
+      );
+      return;
+    }
+
+    Clipboard.setData(ClipboardData(text: promoCode.trim()));
     AppSnackBar.show(
       context,
       message: 'Promo code "$promoCode" copied!',

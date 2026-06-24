@@ -19,6 +19,9 @@ class MovieDetailModel {
     this.castMembers = const [],
     this.crewMembers = const [],
     this.status,
+    this.averageRating = 0,
+    this.ratingCount = 0,
+    this.userRating,
   }) {
     id = id ?? '';
     title = title ?? '';
@@ -54,6 +57,9 @@ class MovieDetailModel {
   List<MovieCredit>? castMembers;
   List<MovieCredit>? crewMembers;
   String? status;
+  double averageRating;
+  int ratingCount;
+  int? userRating;
 
   MovieDetailModel copyWith({
     String? id,
@@ -72,6 +78,9 @@ class MovieDetailModel {
     List<MovieCredit>? castMembers,
     List<MovieCredit>? crewMembers,
     String? status,
+    double? averageRating,
+    int? ratingCount,
+    int? userRating,
   }) {
     return MovieDetailModel(
       id: id ?? this.id,
@@ -90,6 +99,9 @@ class MovieDetailModel {
       castMembers: castMembers ?? this.castMembers,
       crewMembers: crewMembers ?? this.crewMembers,
       status: status ?? this.status,
+      averageRating: averageRating ?? this.averageRating,
+      ratingCount: ratingCount ?? this.ratingCount,
+      userRating: userRating ?? this.userRating,
     );
   }
 }

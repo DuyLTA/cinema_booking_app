@@ -5,13 +5,14 @@ import '../../widgets/custom_book_button.dart';
 import '../../widgets/custom_cine_marquee_app_bar.dart';
 import '../../widgets/custom_image_view.dart';
 import 'provider/cinema_home_provider.dart';
+import 'widgets/cine_home_drawer.dart';
 import 'widgets/cinema_card_widget.dart';
 import 'widgets/coming_soon_item_widget.dart';
 import 'widgets/now_showing_item_widget.dart';
 import 'widgets/offer_card_widget.dart';
 
 class CinemaHomeScreenInitialPage extends StatefulWidget {
-  const CinemaHomeScreenInitialPage({Key? key}) : super(key: key);
+  const CinemaHomeScreenInitialPage({super.key});
 
   static Widget builder(BuildContext context) {
     return const CinemaHomeScreenInitialPage();
@@ -37,7 +38,14 @@ class _CinemaHomeScreenInitialPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appTheme.screenBackground,
-      appBar: const CustomCineMarqueeAppBar(titleText: 'CINE BOOKING'),
+      appBar: CustomCineMarqueeAppBar(
+        titleText: 'CINE BOOKING',
+        onLeadingTap: () =>
+            Navigator.of(context).pushNamed(AppRoutes.profileScreen),
+        onTicketTap: () =>
+            Navigator.of(context).pushNamed(AppRoutes.movieListScreen),
+      ),
+      endDrawer: const CineHomeDrawer(),
       body: Consumer<CinemaHomeProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.nowShowingMovies.isEmpty) {
@@ -69,7 +77,7 @@ class _CinemaHomeScreenInitialPageState
                   _buildComingSoonList(provider),
                   _buildSectionHeader('NEARBY CINEMAS'),
                   _buildCinemaList(provider),
-                  _buildSectionHeader('EXCLUSIVE OFFERS'),
+                  _buildSectionHeader('OFFERS & PROMOTIONS'),
                   _buildOffersList(provider),
                   SizedBox(height: 24.h),
                 ],
@@ -322,7 +330,7 @@ class _CinemaHomeScreenInitialPageState
           final offer = provider.exclusiveOffers[index];
           return OfferCardWidget(
             offer: offer,
-            onClaimTap: () => provider.claimOffer(index),
+            onClaimTap: () => provider.claimOffer(context, index),
             onPromoTap: () =>
                 provider.copyPromoCode(context, offer.promoCode ?? ''),
           );

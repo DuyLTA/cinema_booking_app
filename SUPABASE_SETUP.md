@@ -86,6 +86,16 @@ ADD COLUMN IF NOT EXISTS cast_members JSONB DEFAULT '[]'::jsonb,
 ADD COLUMN IF NOT EXISTS crew_members JSONB DEFAULT '[]'::jsonb;
 ```
 
+### 3.3 Create movie ratings table
+
+Run `supabase_movie_ratings.sql` in Supabase SQL Editor to add:
+
+- `movie_ratings`: one 1-5 star rating per user per movie.
+- `movie_rating_stats`: view used by the app to show average rating and rating count.
+
+The table uses RLS so anyone can read ratings, but authenticated users can only
+insert/update/delete their own rating.
+
 ## 4. Set Up Row Level Security (RLS)
 
 ### 4.1 Enable RLS

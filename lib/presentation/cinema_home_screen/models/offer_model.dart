@@ -10,6 +10,12 @@ class OfferModel {
     this.showOverlayImage,
     this.isClaimed,
     this.id,
+    this.discountType,
+    this.discountValue,
+    this.minOrderAmount,
+    this.maxDiscountAmount,
+    this.startDate,
+    this.endDate,
   }) {
     title = title ?? '';
     description = description ?? '';
@@ -18,6 +24,10 @@ class OfferModel {
     showOverlayImage = showOverlayImage ?? false;
     isClaimed = isClaimed ?? false;
     id = id ?? '';
+    discountType = discountType ?? '';
+    discountValue = discountValue ?? 0;
+    minOrderAmount = minOrderAmount ?? 0;
+    maxDiscountAmount = maxDiscountAmount ?? 0;
   }
 
   String? title;
@@ -27,6 +37,12 @@ class OfferModel {
   bool? showOverlayImage;
   bool? isClaimed;
   String? id;
+  String? discountType;
+  double? discountValue;
+  double? minOrderAmount;
+  double? maxDiscountAmount;
+  DateTime? startDate;
+  DateTime? endDate;
 
   OfferModel copyWith({
     String? title,
@@ -36,6 +52,12 @@ class OfferModel {
     bool? showOverlayImage,
     bool? isClaimed,
     String? id,
+    String? discountType,
+    double? discountValue,
+    double? minOrderAmount,
+    double? maxDiscountAmount,
+    DateTime? startDate,
+    DateTime? endDate,
   }) {
     return OfferModel(
       title: title ?? this.title,
@@ -45,6 +67,12 @@ class OfferModel {
       showOverlayImage: showOverlayImage ?? this.showOverlayImage,
       isClaimed: isClaimed ?? this.isClaimed,
       id: id ?? this.id,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
+      minOrderAmount: minOrderAmount ?? this.minOrderAmount,
+      maxDiscountAmount: maxDiscountAmount ?? this.maxDiscountAmount,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
     );
   }
 }

@@ -1,8 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 import '../models/customer_model.dart';
 
 class AuthService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  static const String googleOAuthRedirectUrl =
+      'cinemabookingapp://login-callback';
 
   // Cache for customer profile to avoid repeated queries
   CustomerModel? _cachedCustomer;
@@ -14,12 +17,15 @@ class AuthService {
   /// Get the current auth session
   Session? get currentSession => _supabase.auth.currentSession;
 
+  /// Auth state changes emitted by Supabase.
+  Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
+
   /// Check if user is logged in with a valid user record
   bool get isLoggedIn =>
       _supabase.auth.currentSession != null &&
       _supabase.auth.currentUser != null;
 
-  /// Register a new user
+  /// Start registering a new user and send a signup confirmation code.
   ///
   /// Parameters:
   /// - [email]: User email
@@ -47,7 +53,31 @@ class AuthService {
         throw Exception('User not created');
       }
 
-      // Create customer profile in database
+      return user;
+    } on AuthException catch (e) {
+      throw Exception('Registration failed: ${e.message}');
+    } catch (e) {
+      throw Exception('Registration error: $e');
+    }
+  }
+
+  /// Verify the signup confirmation code and create the customer profile.
+  Future<User> verifyRegistrationCode({
+    required String email,
+    required String token,
+    required String fullName,
+    String? phone,
+  }) async {
+    try {
+      final response = await _supabase.auth
+          .verifyOTP(email: email, token: token, type: OtpType.signup)
+          .timeout(const Duration(seconds: 10));
+
+      final user = response.user ?? currentUser;
+      if (user == null) {
+        throw Exception('Unable to verify registration.');
+      }
+
       await _createCustomerProfile(
         userId: user.id,
         email: email,
@@ -55,11 +85,27 @@ class AuthService {
         phone: phone,
       );
 
+      await _supabase.auth.signOut();
+      clearCache();
+
       return user;
     } on AuthException catch (e) {
-      throw Exception('Registration failed: ${e.message}');
+      throw Exception('Registration verification failed: ${e.message}');
     } catch (e) {
-      throw Exception('Registration error: $e');
+      throw Exception('Registration verification error: $e');
+    }
+  }
+
+  /// Resend the signup confirmation code to the user's email.
+  Future<void> resendRegistrationCode({required String email}) async {
+    try {
+      await _supabase.auth
+          .resend(email: email, type: OtpType.signup)
+          .timeout(const Duration(seconds: 10));
+    } on AuthException catch (e) {
+      throw Exception('Failed to resend registration code: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to resend registration code: $e');
     }
   }
 
@@ -71,7 +117,7 @@ class AuthService {
     String? phone,
   }) async {
     try {
-      await _supabase.from('customers').insert({
+      await _supabase.from('customers').upsert({
         'id': userId,
         'email': email,
         'full_name': fullName,
@@ -108,6 +154,70 @@ class AuthService {
       throw Exception('Login failed: ${e.message}');
     } catch (e) {
       throw Exception('Login error: $e');
+    }
+  }
+
+  /// Start Google OAuth login. Native apps return through the configured deep link.
+  Future<void> signInWithGoogle() async {
+    try {
+      final redirectUrl = kIsWeb ? Uri.base.origin : googleOAuthRedirectUrl;
+      final opened = await _supabase.auth
+          .signInWithOAuth(OAuthProvider.google, redirectTo: redirectUrl)
+          .timeout(const Duration(seconds: 10));
+      if (!opened) {
+        throw Exception('Unable to open Google sign-in.');
+      }
+    } on AuthException catch (e) {
+      throw Exception('Google sign-in failed: ${e.message}');
+    } catch (e) {
+      throw Exception('Google sign-in failed: $e');
+    }
+  }
+
+  /// Ensure a customer profile exists for the currently authenticated user.
+  Future<CustomerModel?> ensureCurrentCustomerProfile() async {
+    final user = currentUser;
+    if (user == null) {
+      return null;
+    }
+
+    try {
+      final existing = await _supabase
+          .from('customers')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
+
+      if (existing != null) {
+        _cachedCustomer = CustomerModel.fromJson(existing);
+        _cachedUserId = user.id;
+        return _cachedCustomer;
+      }
+
+      final metadata = user.userMetadata ?? const <String, dynamic>{};
+      final fullName =
+          (metadata['full_name'] ??
+                  metadata['name'] ??
+                  metadata['display_name'] ??
+                  user.email ??
+                  'Google User')
+              .toString()
+              .trim();
+      final email = user.email;
+      if (email == null || email.trim().isEmpty) {
+        throw Exception('Google account did not provide an email address.');
+      }
+
+      await _createCustomerProfile(
+        userId: user.id,
+        email: email,
+        fullName: fullName.isEmpty ? 'Google User' : fullName,
+      );
+
+      return getCurrentUserProfile();
+    } catch (e) {
+      throw Exception('Failed to ensure customer profile: $e');
     }
   }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
@@ -6,9 +9,11 @@ import 'package:cinema_booking_app/core/utils/navigator_service.dart';
 import 'package:cinema_booking_app/core/utils/size_utils.dart';
 import 'package:cinema_booking_app/providers/auth_provider.dart';
 import 'package:cinema_booking_app/providers/movie_provider.dart';
+import 'package:cinema_booking_app/providers/ticket_provider.dart';
 import 'package:cinema_booking_app/routes/app_routes.dart';
 import 'package:cinema_booking_app/presentation/launch_screen.dart';
 import 'package:cinema_booking_app/presentation/onboarding_screen/onboarding_screen.dart';
+import 'package:cinema_booking_app/services/payment_return_store.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,8 +34,103 @@ void main() async {
 
 final supabase = Supabase.instance.client;
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final AppLinks _appLinks = AppLinks();
+  final Set<String> _handledPaymentLinks = <String>{};
+  StreamSubscription<Uri>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenForPaymentReturnLinks();
+  }
+
+  Future<void> _listenForPaymentReturnLinks() async {
+    try {
+      final initialLink = await _appLinks.getInitialLink();
+      if (initialLink != null) {
+        _handleIncomingLink(initialLink);
+      }
+    } catch (_) {
+      // Deep link startup errors should not block normal app startup.
+    }
+
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      _handleIncomingLink,
+      onError: (_) {},
+    );
+  }
+
+  void _handleIncomingLink(Uri uri) {
+    if (uri.scheme != 'cinemabookingapp' || uri.host != 'payment-result') {
+      return;
+    }
+
+    final linkKey = uri.toString();
+    if (!_handledPaymentLinks.add(linkKey)) return;
+
+    final status = uri.queryParameters['status'];
+    final responseCode = uri.queryParameters['responseCode'];
+    final isSuccess = status == null
+        ? responseCode == '00'
+        : status == 'success';
+    final txnRef = uri.queryParameters['txnRef'];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = NavigatorService.navigatorKey.currentState;
+      if (navigator == null) return;
+      final pendingPayment = PaymentReturnStore.pendingPayment;
+
+      if (!isSuccess) {
+        PaymentReturnStore.markResult(
+          status: PaymentReturnStatus.failed,
+          txnRef: txnRef,
+        );
+        PaymentReturnStore.clearPending();
+        navigator.pushNamed(
+          AppRoutes.paymentErrorScreen,
+          arguments: pendingPayment?.toRouteArguments(),
+        );
+        return;
+      }
+
+      final payment = PaymentReturnStore.consumePending(txnRef: txnRef);
+      if (payment == null) {
+        PaymentReturnStore.markResult(
+          status: PaymentReturnStatus.failed,
+          txnRef: txnRef,
+        );
+        navigator.pushNamed(
+          AppRoutes.paymentErrorScreen,
+          arguments: pendingPayment?.toRouteArguments(),
+        );
+        return;
+      }
+
+      PaymentReturnStore.markResult(
+        status: PaymentReturnStatus.success,
+        txnRef: txnRef,
+      );
+
+      navigator.pushNamed(
+        AppRoutes.bookingSuccessScreen,
+        arguments: payment.toRouteArguments(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +140,7 @@ class MyApp extends StatelessWidget {
           providers: [
             ChangeNotifierProvider(create: (_) => AuthProvider()),
             ChangeNotifierProvider(create: (_) => MovieProvider()),
+            ChangeNotifierProvider(create: (_) => TicketProvider()),
           ],
           child: MaterialApp(
             title: 'CineBooking',

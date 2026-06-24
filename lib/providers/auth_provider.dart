@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/customer_model.dart';
@@ -35,7 +37,7 @@ class AuthProvider extends ChangeNotifier {
 
       if (hasValidSession) {
         _currentUser = _authService.currentUser;
-        await _loadCustomerProfile();
+        _currentCustomer = await _authService.ensureCurrentCustomerProfile();
       } else {
         _currentUser = null;
         _currentCustomer = null;
@@ -88,17 +90,24 @@ class AuthProvider extends ChangeNotifier {
         throw Exception('Please enter your full name.');
       }
 
-      // Call auth service
-      final user = await _authService.register(
+      // Supabase sends a signup confirmation code when email confirmation is
+      // enabled. Keep the registration pending until the user verifies it.
+      await _authService.register(
         email: email,
         password: password,
         fullName: fullName,
         phone: phone,
       );
 
-      _currentUser = user;
-      _isLoggedIn = true;
-      await _loadCustomerProfile();
+      try {
+        await _authService.logout();
+      } catch (_) {
+        // Some Supabase projects do not create a session until email confirmation.
+      }
+
+      _currentUser = null;
+      _currentCustomer = null;
+      _isLoggedIn = false;
 
       return true;
     } catch (e) {
@@ -106,6 +115,79 @@ class AuthProvider extends ChangeNotifier {
       _isLoggedIn = false;
       _currentUser = null;
       _currentCustomer = null;
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Verify the signup confirmation code sent to the user's email.
+  Future<bool> verifyRegistrationCode({
+    required String email,
+    required String code,
+    required String fullName,
+    String? phone,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (email.isEmpty) {
+        throw Exception('Please enter your email.');
+      }
+      if (!_isValidEmail(email)) {
+        throw Exception('Please enter a valid email.');
+      }
+      if (code.trim().isEmpty) {
+        throw Exception('Please enter the verification code from your email.');
+      }
+      if (fullName.trim().isEmpty) {
+        throw Exception('Please enter your full name.');
+      }
+
+      await _authService.verifyRegistrationCode(
+        email: email,
+        token: code.trim(),
+        fullName: fullName.trim(),
+        phone: (phone ?? '').trim().isEmpty ? null : phone!.trim(),
+      );
+
+      _isLoggedIn = false;
+      _currentUser = null;
+      _currentCustomer = null;
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoggedIn = false;
+      _currentUser = null;
+      _currentCustomer = null;
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Resend the signup confirmation code.
+  Future<bool> resendRegistrationCode({required String email}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (email.isEmpty) {
+        throw Exception('Please enter your email.');
+      }
+      if (!_isValidEmail(email)) {
+        throw Exception('Please enter a valid email.');
+      }
+
+      await _authService.resendRegistrationCode(email: email);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
       return false;
     } finally {
       _isLoading = false;
@@ -157,6 +239,64 @@ class AuthProvider extends ChangeNotifier {
       _currentCustomer = null;
       return false;
     } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Start Google OAuth login and wait for the callback session.
+  Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    StreamSubscription<AuthState>? subscription;
+    final completer = Completer<bool>();
+
+    try {
+      if (_authService.currentSession == null) {
+        subscription = _authService.authStateChanges.listen(
+          (data) {
+            if (data.event != AuthChangeEvent.signedIn ||
+                data.session == null) {
+              return;
+            }
+
+            if (!completer.isCompleted) {
+              completer.complete(true);
+            }
+          },
+          onError: (Object error) {
+            if (!completer.isCompleted) {
+              completer.completeError(error);
+            }
+          },
+        );
+      }
+
+      await _authService.signInWithGoogle();
+
+      if (_authService.currentSession == null) {
+        await completer.future.timeout(const Duration(minutes: 2));
+      }
+
+      _currentUser = _authService.currentUser;
+      _isLoggedIn = _currentUser != null && _authService.currentSession != null;
+
+      if (!_isLoggedIn) {
+        throw Exception('Google sign-in was not completed.');
+      }
+
+      _currentCustomer = await _authService.ensureCurrentCustomerProfile();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoggedIn = false;
+      _currentUser = null;
+      _currentCustomer = null;
+      return false;
+    } finally {
+      await subscription?.cancel();
       _isLoading = false;
       notifyListeners();
     }

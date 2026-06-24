@@ -351,15 +351,6 @@ class _CinemaLoginScreenState extends State<CinemaLoginScreen> {
             padding: EdgeInsets.all(16.h),
             onTap: () => provider.onGoogleSignInPressed(context),
           ),
-          CustomIconButton(
-            imagePath: ImageConstant.imgSvg,
-            size: 56,
-            backgroundColor: appTheme.blue_gray_900_66,
-            borderColor: appTheme.color33FFDF,
-            borderRadius: 28,
-            padding: EdgeInsets.all(16.h),
-            onTap: () => provider.onAppleSignInPressed(context),
-          ),
         ],
       ),
     );

@@ -3,17 +3,41 @@ import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../widgets/custom_cine_marquee_app_bar.dart';
 import '../../widgets/custom_image_view.dart';
-import 'models/movie_list_model.dart';
+import '../cinema_home_screen/widgets/cine_home_drawer.dart';
 import 'provider/movie_list_provider.dart';
+import 'widgets/cinema_movie_header.dart';
 import 'widgets/movie_card_widget.dart';
 
 class MovieListScreen extends StatefulWidget {
-  MovieListScreen({Key? key}) : super(key: key);
+  const MovieListScreen({
+    super.key,
+    this.initialCinemaId,
+    this.initialCinemaName,
+  });
+
+  final String? initialCinemaId;
+  final String? initialCinemaName;
+
+  bool get isCinemaScoped =>
+      (initialCinemaId ?? '').isNotEmpty &&
+      (initialCinemaName ?? '').isNotEmpty;
 
   static Widget builder(BuildContext context) {
+    return fromRouteSettings(ModalRoute.of(context)?.settings);
+  }
+
+  static Widget fromRouteSettings(RouteSettings? routeSettings) {
+    final args = routeSettings?.arguments as Map<String, dynamic>?;
+    final initialCinemaId = args?['cinemaId'] as String?;
+    final initialCinemaName = args?['cinemaName'] as String?;
+
     return ChangeNotifierProvider<MovieListProvider>(
-      create: (context) => MovieListProvider()..initialize(),
-      child: MovieListScreen(),
+      create: (context) =>
+          MovieListProvider()..initialize(initialCinemaId: initialCinemaId),
+      child: MovieListScreen(
+        initialCinemaId: initialCinemaId,
+        initialCinemaName: initialCinemaName,
+      ),
     );
   }
 
@@ -26,11 +50,17 @@ class _MovieListScreenState extends State<MovieListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appTheme.screenBackground,
-      appBar: CustomCineMarqueeAppBar(
-        titleText: 'CINE BOOKING',
-        onLeadingTap: () {},
-        onActionTap: () {},
-      ),
+      appBar: widget.isCinemaScoped
+          ? CinemaMovieHeader(
+              cinemaName: widget.initialCinemaName!,
+              onBack: () => Navigator.of(context).pop(),
+            )
+          : CustomCineMarqueeAppBar(
+              titleText: 'CINE BOOKING',
+              onLeadingTap: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.profileScreen),
+            ),
+      endDrawer: widget.isCinemaScoped ? null : const CineHomeDrawer(),
       body: Consumer<MovieListProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.filteredMovies.isEmpty) {
@@ -77,9 +107,13 @@ class _MovieListScreenState extends State<MovieListScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSearchBar(context, provider),
-          SizedBox(height: 16.h),
-          _buildCinemaSelector(context, provider),
-          SizedBox(height: 16.h),
+          if (!widget.isCinemaScoped) ...[
+            SizedBox(height: 14.h),
+            _buildCinemaSelector(context, provider),
+          ],
+          SizedBox(height: 14.h),
+          _buildCompactFilterRow(context, provider),
+          SizedBox(height: 14.h),
           _buildDateSelector(context, provider),
         ],
       ),
@@ -182,6 +216,137 @@ class _MovieListScreenState extends State<MovieListScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCompactFilterRow(
+    BuildContext context,
+    MovieListProvider provider,
+  ) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildDropdownFilter(
+              label: 'GENRE',
+              value: provider.selectedGenre,
+              items: provider.genres,
+              icon: Icons.category_outlined,
+              onChanged: provider.selectGenre,
+            ),
+          ),
+          SizedBox(width: 10.h),
+          Expanded(
+            child: _buildDropdownFilter(
+              label: 'RATING',
+              value: provider.selectedRatingFilter,
+              items: provider.ratingFilters,
+              icon: Icons.star_border,
+              onChanged: provider.selectRatingFilter,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownFilter({
+    required String label,
+    required String value,
+    required List<String> items,
+    required IconData icon,
+    required ValueChanged<String> onChanged,
+  }) {
+    final selectedValue = items.contains(value) ? value : items.first;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyleHelper.instance.label10RegularBebasNeue.copyWith(
+            letterSpacing: 1,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        PopupMenuButton<String>(
+          initialValue: selectedValue,
+          tooltip: '',
+          color: appTheme.gray_900_02,
+          surfaceTintColor: Colors.transparent,
+          position: PopupMenuPosition.under,
+          offset: Offset(0, 6.h),
+          constraints: BoxConstraints(minWidth: 150.h, maxWidth: 220.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.h),
+            side: BorderSide(color: appTheme.color19A48B, width: 1.h),
+          ),
+          onSelected: onChanged,
+          itemBuilder: (context) {
+            return items.map((item) {
+              final isSelected = item == selectedValue;
+              return PopupMenuItem<String>(
+                value: item,
+                height: 38.h,
+                child: Row(
+                  children: [
+                    if (isSelected)
+                      Icon(Icons.check, color: appTheme.orange_100, size: 16.h)
+                    else
+                      SizedBox(width: 16.h),
+                    SizedBox(width: 8.h),
+                    Expanded(
+                      child: Text(
+                        item,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyleHelper.instance.body14RegularBebasNeue
+                            .copyWith(
+                              color: isSelected
+                                  ? appTheme.orange_100
+                                  : appTheme.gray_300,
+                              letterSpacing: 0.8,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList();
+          },
+          child: Container(
+            height: 42.h,
+            padding: EdgeInsets.symmetric(horizontal: 12.h),
+            decoration: BoxDecoration(
+              color: appTheme.gray_900_03,
+              borderRadius: BorderRadius.circular(12.h),
+              border: Border.all(color: appTheme.color19A48B, width: 1.h),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: appTheme.orange_100, size: 17.h),
+                SizedBox(width: 8.h),
+                Expanded(
+                  child: Text(
+                    selectedValue,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyleHelper.instance.body14RegularBebasNeue
+                        .copyWith(color: appTheme.gray_300, letterSpacing: 0.8),
+                  ),
+                ),
+                SizedBox(width: 8.h),
+                Icon(
+                  Icons.keyboard_arrow_down,
+                  color: appTheme.gray_400,
+                  size: 20.h,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

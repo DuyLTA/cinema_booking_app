@@ -352,20 +352,47 @@ class CinemaLoginProvider extends ChangeNotifier {
     return emailRegex.hasMatch(email);
   }
 
-  void onGoogleSignInPressed(BuildContext context) {
-    AppSnackBar.show(
-      context,
-      message: 'Google Sign-In coming soon.',
-      type: AppSnackBarType.info,
-    );
-  }
+  Future<void> onGoogleSignInPressed(BuildContext context) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
 
-  void onAppleSignInPressed(BuildContext context) {
-    AppSnackBar.show(
-      context,
-      message: 'Apple Sign-In coming soon.',
-      type: AppSnackBarType.info,
-    );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      final success = await authProvider.signInWithGoogle();
+      if (!success) {
+        throw Exception(authProvider.errorMessage ?? 'Google sign-in failed.');
+      }
+
+      isLoading = false;
+      isSuccess = true;
+      notifyListeners();
+
+      if (!context.mounted) return;
+
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: 'Google sign-in successful. Welcome back.',
+        type: AppSnackBarType.success,
+      );
+      navigator.pushReplacementNamed(AppRoutes.cinemaHomeScreen);
+    } catch (e) {
+      isLoading = false;
+      errorMessage = e.toString();
+      isSuccess = false;
+      notifyListeners();
+
+      if (!context.mounted) return;
+
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: errorMessage ?? 'Google sign-in failed.',
+        type: AppSnackBarType.error,
+      );
+    }
   }
 
   void onJoinThePremiereTapped(BuildContext context) {

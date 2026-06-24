@@ -10,8 +10,12 @@ class MovieCardWidget extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onBookTap;
 
-  MovieCardWidget({Key? key, required this.movie, this.onTap, this.onBookTap})
-    : super(key: key);
+  const MovieCardWidget({
+    super.key,
+    required this.movie,
+    this.onTap,
+    this.onBookTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,21 +24,20 @@ class MovieCardWidget extends StatelessWidget {
         final posterHeight = (constraints.maxHeight * 0.58).clamp(100.h, 220.h);
 
         return GestureDetector(
-          onTap: onTap ?? () {
-            if (movie.id != null && movie.id!.isNotEmpty) {
-              Navigator.of(context).pushNamed(
-                AppRoutes.movieDetailScreen,
-                arguments: {'movieId': movie.id},
-              );
-            }
-          },
+          onTap:
+              onTap ??
+              () {
+                if (movie.id != null && movie.id!.isNotEmpty) {
+                  Navigator.of(context).pushNamed(
+                    AppRoutes.movieDetailScreen,
+                    arguments: {'movieId': movie.id},
+                  );
+                }
+              },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: posterHeight,
-                child: _buildPosterSection(),
-              ),
+              SizedBox(height: posterHeight, child: _buildPosterSection()),
               SizedBox(height: 8.h),
               Text(
                 movie.title ?? '',
@@ -97,8 +100,36 @@ class MovieCardWidget extends StatelessWidget {
                 ),
               ),
             ),
+            Positioned(left: 8.h, bottom: 8.h, child: _buildRatingBadge()),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRatingBadge() {
+    final hasRating = movie.ratingCount > 0;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.h, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: appTheme.black_900.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(14.h),
+        border: Border.all(color: appTheme.orange_100, width: 1.h),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star, color: appTheme.orange_100, size: 14.h),
+          SizedBox(width: 4.h),
+          Text(
+            hasRating ? movie.averageRating.toStringAsFixed(1) : '--',
+            style: TextStyleHelper.instance.body12MediumDMSans.copyWith(
+              color: appTheme.gray_300,
+              fontSize: 11.fSize,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -96,6 +96,33 @@ Example `crew_members`:
 
 ---
 
+### `movie_ratings`
+
+Stores one 1-5 star rating per user per movie.
+
+| Field | Type | Note |
+|---|---|---|
+| `id` | uuid | PK |
+| `movie_id` | uuid | FK → `movies.id` |
+| `user_id` | uuid | FK → `auth.users.id` |
+| `rating` | int | 1 to 5 stars |
+| `created_at` | timestamptz | Created time |
+| `updated_at` | timestamptz | Updated time |
+
+Constraint: `UNIQUE (movie_id, user_id)` so each user can update their rating instead of creating duplicates.
+
+View: `movie_rating_stats`
+
+| Field | Type | Note |
+|---|---|---|
+| `movie_id` | uuid | Movie id |
+| `average_rating` | numeric | Average 1-5 rating |
+| `rating_count` | int | Number of ratings |
+
+Setup SQL: `supabase_movie_ratings.sql`.
+
+---
+
 ### `cinemas`
 
 Stores cinema branches.
@@ -462,5 +489,4 @@ Customer opens chat
 10. Use Publishable/Anon key in Flutter. Never use Secret key in Flutter.
 11. For testing register, disable email confirmation or login again before inserting customer profile.
 12. Test simple flow first: Auth → Movies → Showtimes → Seats → Booking → Tickets.
-
 

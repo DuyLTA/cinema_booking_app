@@ -9,30 +9,42 @@ class MovieItemModel {
   String? id;
   String? title;
   String? durationGenre;
+  String? genre;
   String? rating;
   String? posterImage;
+  double averageRating;
+  int ratingCount;
 
   MovieItemModel({
     this.id,
     this.title,
     this.durationGenre,
+    this.genre,
     this.rating,
     this.posterImage,
+    this.averageRating = 0,
+    this.ratingCount = 0,
   });
 
   MovieItemModel copyWith({
     String? id,
     String? title,
     String? durationGenre,
+    String? genre,
     String? rating,
     String? posterImage,
+    double? averageRating,
+    int? ratingCount,
   }) {
     return MovieItemModel(
       id: id ?? this.id,
       title: title ?? this.title,
       durationGenre: durationGenre ?? this.durationGenre,
+      genre: genre ?? this.genre,
       rating: rating ?? this.rating,
       posterImage: posterImage ?? this.posterImage,
+      averageRating: averageRating ?? this.averageRating,
+      ratingCount: ratingCount ?? this.ratingCount,
     );
   }
 }

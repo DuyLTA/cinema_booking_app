@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cinema_booking_app/presentation/cinema_register_screen/models/cinema_register_model.dart';
 import 'package:cinema_booking_app/core/app_export.dart';
 import 'package:cinema_booking_app/providers/auth_provider.dart';
-import 'package:cinema_booking_app/routes/app_routes.dart';
 
 class CinemaRegisterProvider extends ChangeNotifier {
   CinemaRegisterModel cinemaRegisterModel = CinemaRegisterModel();
@@ -12,15 +11,18 @@ class CinemaRegisterProvider extends ChangeNotifier {
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
+  TextEditingController verificationCodeController = TextEditingController();
 
   FocusNode fullNameFocusNode = FocusNode();
   FocusNode emailFocusNode = FocusNode();
   FocusNode phoneFocusNode = FocusNode();
   FocusNode passwordFocusNode = FocusNode();
   FocusNode confirmPasswordFocusNode = FocusNode();
+  FocusNode verificationCodeFocusNode = FocusNode();
 
   bool isLoading = false;
   bool isSuccess = false;
+  bool isAwaitingEmailVerification = false;
   String? errorMessage;
 
   @override
@@ -30,11 +32,13 @@ class CinemaRegisterProvider extends ChangeNotifier {
     phoneController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    verificationCodeController.dispose();
     fullNameFocusNode.dispose();
     emailFocusNode.dispose();
     phoneFocusNode.dispose();
     passwordFocusNode.dispose();
     confirmPasswordFocusNode.dispose();
+    verificationCodeFocusNode.dispose();
     super.dispose();
   }
 
@@ -44,6 +48,16 @@ class CinemaRegisterProvider extends ChangeNotifier {
     }
     if (value.trim().length < 2) {
       return 'Full name must be at least 2 characters';
+    }
+    return null;
+  }
+
+  String? validateVerificationCode(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Verification code is required';
+    }
+    if (value.trim().length < 6) {
+      return 'Enter the 6-digit code from your email';
     }
     return null;
   }
@@ -97,7 +111,6 @@ class CinemaRegisterProvider extends ChangeNotifier {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
     final fullName = fullNameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
@@ -123,23 +136,20 @@ class CinemaRegisterProvider extends ChangeNotifier {
 
       isLoading = false;
       isSuccess = true;
+      isAwaitingEmailVerification = true;
       notifyListeners();
 
-      fullNameController.clear();
-      emailController.clear();
-      phoneController.clear();
       passwordController.clear();
       confirmPasswordController.clear();
+      verificationCodeController.clear();
 
       if (!context.mounted) return;
 
       AppSnackBar.showWithMessenger(
         messenger,
-        message: 'Registration successful! Welcome to Cine Booking.',
+        message: 'A verification code has been sent to $email.',
         type: AppSnackBarType.success,
       );
-
-      navigator.pushReplacementNamed(AppRoutes.cinemaHomeScreen);
     } catch (e) {
       isLoading = false;
       errorMessage = e.toString();
@@ -156,20 +166,138 @@ class CinemaRegisterProvider extends ChangeNotifier {
     }
   }
 
-  void onGoogleSignInPressed(BuildContext context) {
-    AppSnackBar.show(
-      context,
-      message: 'Google Sign-In coming soon.',
-      type: AppSnackBarType.info,
+  Future<void> onVerifyRegistrationPressed(BuildContext context) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final fullName = fullNameController.text.trim();
+    final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
+    final code = verificationCodeController.text.trim();
+
+    try {
+      final success = await authProvider.verifyRegistrationCode(
+        email: email,
+        code: code,
+        fullName: fullName,
+        phone: phone.isEmpty ? null : phone,
+      );
+
+      if (!success) {
+        throw Exception(
+          authProvider.errorMessage ?? 'Registration verification failed.',
+        );
+      }
+
+      isLoading = false;
+      isSuccess = true;
+      isAwaitingEmailVerification = false;
+      notifyListeners();
+
+      fullNameController.clear();
+      emailController.clear();
+      phoneController.clear();
+      passwordController.clear();
+      confirmPasswordController.clear();
+      verificationCodeController.clear();
+
+      if (!context.mounted) return;
+
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: 'Email verified. Please sign in to continue.',
+        type: AppSnackBarType.success,
+      );
+
+      navigator.pushReplacementNamed(AppRoutes.cinemaLoginScreen);
+    } catch (e) {
+      isLoading = false;
+      errorMessage = e.toString();
+      isSuccess = false;
+      notifyListeners();
+
+      if (!context.mounted) return;
+
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: errorMessage ?? 'An error occurred.',
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
+  Future<void> onResendRegistrationCodePressed(BuildContext context) async {
+    final email = emailController.text.trim();
+    final messenger = ScaffoldMessenger.of(context);
+
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.resendRegistrationCode(email: email);
+
+    isLoading = false;
+    errorMessage = authProvider.errorMessage;
+    notifyListeners();
+
+    if (!context.mounted) return;
+
+    AppSnackBar.showWithMessenger(
+      messenger,
+      message: success
+          ? 'A new verification code has been sent.'
+          : errorMessage ?? 'Failed to resend verification code.',
+      type: success ? AppSnackBarType.success : AppSnackBarType.error,
     );
   }
 
-  void onAppleSignInPressed(BuildContext context) {
-    AppSnackBar.show(
-      context,
-      message: 'Apple Sign-In coming soon.',
-      type: AppSnackBarType.info,
-    );
+  Future<void> onGoogleSignInPressed(BuildContext context) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      final success = await authProvider.signInWithGoogle();
+      if (!success) {
+        throw Exception(authProvider.errorMessage ?? 'Google sign-in failed.');
+      }
+
+      isLoading = false;
+      isSuccess = true;
+      isAwaitingEmailVerification = false;
+      notifyListeners();
+
+      if (!context.mounted) return;
+
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: 'Google sign-in successful. Welcome.',
+        type: AppSnackBarType.success,
+      );
+      navigator.pushReplacementNamed(AppRoutes.cinemaHomeScreen);
+    } catch (e) {
+      isLoading = false;
+      errorMessage = e.toString();
+      isSuccess = false;
+      notifyListeners();
+
+      if (!context.mounted) return;
+
+      AppSnackBar.showWithMessenger(
+        messenger,
+        message: errorMessage ?? 'Google sign-in failed.',
+        type: AppSnackBarType.error,
+      );
+    }
   }
 
   void onSignInTapped(BuildContext context) {

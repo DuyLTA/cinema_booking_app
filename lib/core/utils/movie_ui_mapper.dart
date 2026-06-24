@@ -92,6 +92,7 @@ class MovieUiMapper {
       id: movie.id,
       title: movie.title,
       durationGenre: durationGenreLabel(movie),
+      genre: movie.genre,
       rating: movie.ageRating ?? 'P',
       posterImage: posterPath(movie),
     );
