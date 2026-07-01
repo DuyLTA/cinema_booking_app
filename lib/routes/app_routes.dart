@@ -17,6 +17,7 @@ import '../presentation/ticket_screen/ticket_detail_screen.dart';
 import '../presentation/ticket_screen/ticket_screen.dart';
 import '../presentation/cinema_selection_screen/cinema_selection_screen.dart';
 import '../presentation/cinema_schedule_screen/cinema_schedule_screen.dart';
+import '../presentation/cinema_map_screen/cinema_map_screen.dart';
 
 class AppRoutes {
   static const String loginScreen = '/login';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String movieListScreen = '/movie_list_screen';
   static const String cinemaSelectionScreen = '/cinema_selection_screen';
   static const String cinemaScheduleScreen = '/cinema_schedule_screen';
+  static const String cinemaMapScreen = '/cinema_map_screen';
   static const String movieDetailScreen = '/movie_detail_screen';
   static const String sessionSelectionScreen = '/session_selection_screen';
   static const String seatSelectionScreen = '/seat_selection_screen';
@@ -51,6 +53,7 @@ class AppRoutes {
     cinemaHomeScreen: CinemaHomeScreen.builder,
     cinemaSelectionScreen: CinemaSelectionScreen.builder,
     cinemaScheduleScreen: CinemaScheduleScreen.builder,
+    cinemaMapScreen: CinemaMapScreen.builder,
     movieListScreen: MovieListScreen.builder,
     movieDetailScreen: MovieDetailScreen.builder,
     sessionSelectionScreen: SessionSelectionScreen.builder,

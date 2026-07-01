@@ -63,7 +63,7 @@ class CinemaSelectionScreen extends StatelessWidget {
               final cinema = provider.cinemas[index];
               return CinemaSelectionCard(
                 cinema: cinema,
-                onTap: () => _openCinemaMovies(context, cinema),
+                onTap: () => _openCinemaMap(context, provider, cinema),
               );
             },
           );
@@ -72,10 +72,14 @@ class CinemaSelectionScreen extends StatelessWidget {
     );
   }
 
-  void _openCinemaMovies(BuildContext context, CinemaEntityModel cinema) {
+  void _openCinemaMap(
+    BuildContext context,
+    CinemaSelectionProvider provider,
+    CinemaEntityModel cinema,
+  ) {
     Navigator.of(context).pushNamed(
-      AppRoutes.cinemaScheduleScreen,
-      arguments: {'cinemaId': cinema.id, 'cinemaName': cinema.name},
+      AppRoutes.cinemaMapScreen,
+      arguments: {'cinema': cinema, 'userPosition': provider.userPosition},
     );
   }
 }

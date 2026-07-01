@@ -7,6 +7,7 @@ import '../booking_confirmation_screen/booking_confirmation_screen.dart';
 import '../food_beverage_screen/food_beverage_screen.dart';
 import '../movie_detail_screen/movie_detail_screen.dart';
 import '../cinema_selection_screen/cinema_selection_screen.dart';
+import '../cinema_map_screen/cinema_map_screen.dart';
 import '../cinema_schedule_screen/cinema_schedule_screen.dart';
 import '../movie_detail_screen/provider/movie_detail_provider.dart';
 import '../movie_list_screen/movie_list_screen.dart';
@@ -129,6 +130,8 @@ class CinemaHomeScreenState extends State<CinemaHomeScreen> {
         return MovieListScreen.fromRouteSettings(routeSettings);
       case AppRoutes.cinemaSelectionScreen:
         return CinemaSelectionScreen.builder(context);
+      case AppRoutes.cinemaMapScreen:
+        return CinemaMapScreen.fromRouteSettings(routeSettings);
       case AppRoutes.cinemaScheduleScreen:
         return CinemaScheduleScreen.fromRouteSettings(routeSettings);
       case AppRoutes.movieDetailScreen:

@@ -95,12 +95,40 @@ class CinemaSelectionCard extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 10.h),
-              Icon(Icons.chevron_right, color: appTheme.gray_500, size: 24.h),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (cinema.distanceKm != null)
+                    Text(
+                      _formatDistance(cinema.distanceKm!),
+                      style: TextStyleHelper.instance.body14RegularBebasNeue
+                          .copyWith(
+                            color: appTheme.amber_A400,
+                            fontSize: 16.fSize,
+                            letterSpacing: 1,
+                          ),
+                    ),
+                  SizedBox(height: 6.h),
+                  Icon(
+                    Icons.chevron_right,
+                    color: appTheme.gray_500,
+                    size: 24.h,
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatDistance(double distanceKm) {
+    if (distanceKm < 1) {
+      return '${(distanceKm * 1000).round()} M';
+    }
+    return '${distanceKm.toStringAsFixed(1)} KM';
   }
 }
 
